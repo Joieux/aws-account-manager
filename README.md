@@ -260,4 +260,4 @@ Built as a learning project to understand AWS IAM, cross-account access, and bot
 
 ## Blog Post
 
-[Read the full blog post (PDF)](./walkthrough.pdf)
+For a detailed walkthrough of building this tool, including challenges and lessons learned, [download the full project report (PDF)](./walkthrough.pdf).
