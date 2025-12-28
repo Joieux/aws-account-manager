@@ -1,0 +1,743 @@
+<html><head><title>Building an AWS Multi-Account Access Manager: From Setup to Deployment</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body class="pdf en-US" lang="en-US"><article id="28551790-a77c-8033-9009-e01361a60fcf" class="page sans"><header><img class="page-cover-image" src="https://www.notion.so/images/page-cover/nasa_robert_stewart_spacewalk.jpg" style="object-position:center 40%"/><div class="page-header-icon page-header-icon-with-cover"><span class="icon">☁️</span></div><h1 class="page-title" dir="auto">Building an AWS Multi-Account Access Manager: From Setup to Deployment</h1><p class="page-description" dir="auto"></p></header><div class="page-body"><div style="display:contents" dir="auto"><p id="28551790-a77c-80e7-9e3f-ffa060679f08" class=""><time>@October 6, 2025</time> </p></div><div style="display:contents" dir="auto"><h1 id="28551790-a77c-80b8-9168-c67e49bbabdb" class="">Why This Project?</h1></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8093-8418-ffbb605612c7" class="">Managing access across multiple AWS accounts is something every cloud engineer needs to understand. Whether you&#x27;re working at a startup that&#x27;s outgrown a single account or joining an enterprise with dozens of AWS environments, cross-account access is fundamental to AWS security architecture.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8035-97fc-fcf67f3f1ba9" class="">I decided to build a Multi-Account Access Manager to learn IAM deeply and create something I could actually use. This post covers the foundational setup: creating multiple AWS accounts, configuring the AWS CLI, and establishing cross-account trust relationships.</p></div><div style="display:contents" dir="auto"><h2 id="28551790-a77c-8091-a140-ea184b23ff10" class="">Prerequisites</h2></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8025-95fc-e617f336e7d2" class="">Before starting, I made sure I had:</p></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-809d-90b7-e3c754fe596a" class="bulleted-list"><li style="list-style-type:disc">A Mac (these instructions are Mac-specific, but the concepts apply everywhere)</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8014-a831-c7f11da40bf4" class="bulleted-list"><li style="list-style-type:disc">An AWS account</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8059-b6db-c39524df8d46" class="bulleted-list"><li style="list-style-type:disc">Basic command line familiarity</li></ul></div><div style="display:contents" dir="auto"><h2 id="28551790-a77c-8073-9229-d4c85f12b703" class="">Step 1: Installing the Tools</h2></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80f7-a143-c6a887b514ef" class="">First, I needed to install Homebrew, AWS CLI, Python, and boto3.</p></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-807d-94b1-d98eb1d4fb13" class="">Installing Homebrew</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8049-8ed0-cff66075c627" class="">Homebrew is a package manager for Mac that makes installing development tools straightforward. I ran:</p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-80eb-ade1-dbdbbd1ed3c4" class="code code-wrap"><code class="language-Bash" style="white-space:pre-wrap;word-break:break-all">/bin/bash -c &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&quot;
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-800b-889c-cf2008d80b71" class="">The installer prompted for my Mac password and showed what it would install. After installation, it displayed additional commands to add Homebrew to my PATH, which I ran immediately.</p></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-8079-b55b-cc54e14996d0" class="">Installing AWS CLI and Python</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80d8-9cdc-dccbbaa6d043" class="">With Homebrew installed, I installed the AWS CLI:</p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-804a-810c-f096806c5194" class="code code-wrap"><code class="language-Bash" style="white-space:pre-wrap;word-break:break-all">brew install awscli
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8009-954c-fe4cbd18d842" class="">Then Python 3:</p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-8008-a7dc-ee42b0d21e6d" class="code code-wrap"><code class="language-Bash" style="white-space:pre-wrap;word-break:break-all">brew install python3
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8060-9e33-ed427e086c9c" class="">And finally boto3, the Python SDK for AWS:</p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-80aa-acc4-ee5c49528028" class="code code-wrap"><code class="language-Bash" style="white-space:pre-wrap;word-break:break-all">pip3 install boto3
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80ac-87a3-f81280c50575" class="">I verified everything worked:</p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-806b-8d36-ebd309970dd7" class="code code-wrap"><code class="language-Bash" style="white-space:pre-wrap;word-break:break-all">aws --version
+# Output: aws-cli/2.31.8 Python/3.13.7 Darwin/24.6.0 source/arm64
+
+python3 --version
+# Output: Python 3.12.7
+</code></pre></div><div style="display:contents" dir="auto"><h2 id="28551790-a77c-80cf-96ce-cc34da36e1d8" class="">Step 2: Creating Multiple AWS Accounts</h2></div><div style="display:contents" dir="auto"><p id="28551790-a77c-809f-a2e7-d069dc11e376" class="">To demonstrate cross-account access, I needed at least two AWS accounts. I already had my main account, so I created a second one using AWS Organizations.</p></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-805b-b3da-cc2980aec6a8" class="">Using AWS Organizations</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8068-a40d-f6a611cd6d9d" class="">AWS Organizations lets you manage multiple accounts under one umbrella, which mirrors how real companies structure their AWS environments.</p></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-80db-8e1c-f15c866524ee" class="numbered-list" start="1"><li>Logged into my main AWS account</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-806a-b401-d7f232261c32" class="numbered-list" start="2"><li>Navigated to AWS Organizations</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-8077-8cdf-fac141e77879" class="numbered-list" start="3"><li>Clicked &quot;Create organization&quot;</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-80cf-b80f-db30b91e4303" class="numbered-list" start="4"><li>Selected &quot;Add an AWS account&quot; then &quot;Create an AWS account&quot;</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-80f2-b369-e109cd52ddff" class="numbered-list" start="5"><li>Used the email trick: if my main account was <code>myemail@gmail.com</code>, I used <code>myemail+aws2@gmail.com</code></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-80c8-9bb1-c733373419e0" class="numbered-list" start="6"><li>Named it &quot;Dev Account&quot;</li></ol></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8069-8741-f74659a3dd4c" class="">AWS created the account automatically. My main account ID was <code>123456789012</code> and the new account ID was <code>987654321098</code>.</p></div><div style="display:contents" dir="auto"><h2 id="28551790-a77c-8004-857a-d401aca1df2c" class="">Step 3: Configuring AWS CLI Credentials</h2></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80cc-85b8-f840a7b63043" class="">To interact with AWS programmatically, I needed to configure the AWS CLI with access credentials.</p></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-80fa-802b-e3f98504e832" class="">Creating an IAM User</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80a0-96bf-f8432f4f8d7c" class="">In my main AWS account:</p></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-8061-9a9e-f819ffb8948f" class="numbered-list" start="1"><li>Navigated to IAM service</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-8055-9f56-c019e59c1740" class="numbered-list" start="2"><li>Clicked &quot;Users&quot; then &quot;Create user&quot;</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-80ce-865d-d52bd612a961" class="numbered-list" start="3"><li>Named it <code>cli-user</code></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-803b-9143-e4d6c6c163f5" class="numbered-list" start="4"><li>Attached the <code>AdministratorAccess</code> policy (I&#x27;ll restrict this later)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-8009-a3ad-e31c68022d5d" class="numbered-list" start="5"><li>Went to the Security credentials tab</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-8023-b5a8-efffc96fd9a0" class="numbered-list" start="6"><li>Clicked &quot;Create access key&quot;</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-809b-a0eb-d28745ca0b16" class="numbered-list" start="7"><li>Selected &quot;Command Line Interface (CLI)&quot;</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-80e5-8de4-f399bd0064be" class="numbered-list" start="8"><li>Copied the Access Key ID and Secret Access Key</li></ol></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-80d2-ad7f-dd5eb08cb365" class="">Configuring the CLI</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80e8-9db4-d35c55dd5051" class="">I ran:</p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-80b7-97ce-e8913f89e8aa" class="code code-wrap"><code class="language-Bash" style="white-space:pre-wrap;word-break:break-all">aws configure
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8073-9a21-d643a96b5a50" class="">It prompted me for:</p></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-80c2-8378-e1b6880964bb" class="bulleted-list"><li style="list-style-type:disc">Access Key ID (pasted from AWS)</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-80dd-9ecb-f100ce5e6e7d" class="bulleted-list"><li style="list-style-type:disc">Secret Access Key (pasted from AWS)</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-808a-ba35-d15c66d1c350" class="bulleted-list"><li style="list-style-type:disc">Region: <code>us-east-1</code></li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-800d-9740-c71d1ac3f5c7" class="bulleted-list"><li style="list-style-type:disc">Output format: (pressed Enter for default)</li></ul></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8013-a999-e02bdf2ae692" class="">To verify it worked:</p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-8078-8fbc-fc2295cc9c46" class="code code-wrap"><code class="language-Bash" style="white-space:pre-wrap;word-break:break-all">aws sts get-caller-identity
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8013-84b9-cb528de35aa4" class="">This returned my user information, confirming authentication was successful.</p></div><div style="display:contents" dir="auto"><h2 id="28551790-a77c-80f1-bf69-f71d8e2dca3b" class="">Step 4: Setting Up Cross-Account Access</h2></div><div style="display:contents" dir="auto"><p id="28551790-a77c-809c-bb82-dbd827129929" class="">This is where IAM really comes into play. I needed to create a role in my second account that my main account could assume.</p></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-80b7-8b6f-e5901831bcaf" class="">Accessing the Second Account</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8010-899b-f7b58a82eee6" class="">Since I created the second account through Organizations, I needed to set up access:</p></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-809d-bc7a-cb44441730c8" class="numbered-list" start="1"><li>Found the account in AWS Organizations and noted its email</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-8016-9882-fbd1a0fd464d" class="numbered-list" start="2"><li>Opened an incognito browser window</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-8015-b6d4-d583d1c2366c" class="numbered-list" start="3"><li>Went to AWS sign-in and clicked &quot;Forgot password&quot;</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-8093-9289-d8fb95b0b19d" class="numbered-list" start="4"><li>Reset the password using the second account&#x27;s email</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-8086-b00e-f9a33dec0f06" class="numbered-list" start="5"><li>Logged in with the new password</li></ol></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-8085-9009-ff0148b4bee9" class="">Creating the Cross-Account Role</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80fc-8553-f2193d3f83fc" class="">In the second account:</p></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-8054-9687-ee3fa68fb477" class="numbered-list" start="1"><li>Navigated to IAM</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-80ba-bf2f-dab88de37644" class="numbered-list" start="2"><li>Clicked &quot;Roles&quot; then &quot;Create role&quot;</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-806e-bd8f-ce27ce60ddb2" class="numbered-list" start="3"><li>Selected &quot;AWS account&quot; as the trusted entity</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-80ef-a514-f0d8d62a89b4" class="numbered-list" start="4"><li>Selected &quot;Another AWS account&quot;</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-80db-b0c7-dd4e99a52de8" class="numbered-list" start="5"><li>Entered my main account ID: <code>123456789012</code></li></ol></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80f2-8297-c0a0a86d307a" class=""><strong>Error encountered:</strong> I initially typed <code>123455789012</code> (wrong number). AWS rejected it with the error:</p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-8005-b863-d591bebc2f66" class="code code-wrap"><code class="language-Plain Text" style="white-space:pre-wrap;word-break:break-all">Failed to create role CrossAccountAdminRole.
+Invalid principal in policy: &quot;AWS&quot;:&quot;123456789012&quot;
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-805b-9bb3-d9a9c3f8cb7c" class=""><strong>Fix:</strong> I double-checked my main account ID and re-entered it correctly as <code>123456789012</code>.</p></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-80ce-a62d-d9cc8acca34a" class="numbered-list" start="1"><li>Clicked Next and attached the <code>AdministratorAccess</code> policy</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-803b-b827-ee45c31987e5" class="numbered-list" start="2"><li>Named the role <code>CrossAccountAdminRole</code></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="28551790-a77c-802f-a364-f276e35a3430" class="numbered-list" start="3"><li>Created the role</li></ol></div><div style="display:contents" dir="auto"><p id="28551790-a77c-804d-8cdf-cfd2184549d5" class="">The resulting ARN was: <code>arn:aws:iam::987654321098:role/CrossAccountAdminRole</code></p></div><div style="display:contents" dir="auto"><h2 id="28551790-a77c-8079-a51b-f82cae5b25fc" class="">Step 5: Testing Cross-Account Access</h2></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8000-a1e4-c90d6583576d" class="">Back in my main account, I tested whether I could assume the role in the second account.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80ad-a189-d08b10ca2aeb" class="">From Terminal:</p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-8046-bc13-d761843e2fbb" class="code code-wrap"><code class="language-Bash" style="white-space:pre-wrap;word-break:break-all">aws sts assume-role \
+  --role-arn arn:aws:iam::987654321098:role/CrossAccountAdminRole \
+  --role-session-name test-session
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80ed-8b4b-c971b1fd9e28" class="">Success! AWS returned temporary credentials including an AccessKeyId, SecretAccessKey, and SessionToken.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80be-a221-da0518bb16cb" class="">This confirmed that:</p></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-805d-84ce-d0e6d4a04895" class="bulleted-list"><li style="list-style-type:disc">The trust relationship was configured correctly</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-80f6-93ab-c1e12ee06af7" class="bulleted-list"><li style="list-style-type:disc">My main account could assume roles in the second account</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8051-b737-ca5ecb34cc85" class="bulleted-list"><li style="list-style-type:disc">The foundation for building the automation tool was solid</li></ul></div><div style="display:contents" dir="auto"><h2 id="28551790-a77c-8066-8247-e2b8dee8dca8" class="">Step 6: Building the Python Tool</h2></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8084-ac66-e9ffab631bba" class="">With the infrastructure working, I built a Python script to automate the entire process. The script needed to:</p></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-80c2-9f6c-e3f07e4a7ade" class="bulleted-list"><li style="list-style-type:disc">Read configuration about accounts and roles</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8086-8eed-e0b66956a3e6" class="bulleted-list"><li style="list-style-type:disc">Assume roles and retrieve temporary credentials</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-803b-86ae-d28cac3ad39c" class="bulleted-list"><li style="list-style-type:disc">Save those credentials for easy use</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8024-8035-d6745093ba33" class="bulleted-list"><li style="list-style-type:disc">Log all access attempts</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-80df-be9e-eb85b7ddb01a" class="bulleted-list"><li style="list-style-type:disc">Handle errors gracefully</li></ul></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-8015-b178-d9ad22623c8d" class="">Initial Script Issues</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80e5-a9f6-e0e8fd02aa9c" class="">When I first ran the script, I hit an immediate error:</p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-8071-8eed-cf687093fe3a" class="code code-wrap"><code class="language-Plain Text" style="white-space:pre-wrap;word-break:break-all">ModuleNotFoundError: No module named &#x27;boto3&#x27;
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8051-83f4-e058bc8a69de" class=""><strong>Fix:</strong> I needed to install boto3 in the correct Python environment:</p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-80c6-a15a-f5fc806fb4b1" class="code code-wrap"><code class="language-Bash" style="white-space:pre-wrap;word-break:break-all">pip3 install boto3
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8044-973e-faf2de7c7758" class="">This installed successfully, though it showed a dependency conflict warning with aiobotocore. The warning didn&#x27;t affect functionality, so I proceeded.</p></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-802c-94c8-f0a47617b746" class="">The Working Script</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80a6-baae-f3969107a2ed" class="">The complete Python script is available on GitHub: <a href="https://github.com/Joieux/aws-account-manager.git">https://github.com/Joieux/aws-account-manager.git</a></p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8070-9496-d4ac38203b63" class="">Key features of the tool:</p></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8060-9613-fc650962fae9" class="bulleted-list"><li style="list-style-type:disc"><strong>Configuration Management</strong>: Uses a JSON file to store account information</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8060-8939-fc53b9468dc7" class="bulleted-list"><li style="list-style-type:disc"><strong>Role Assumption</strong>: Automates the STS AssumeRole process</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8003-98d0-f2aeecf8d8d8" class="bulleted-list"><li style="list-style-type:disc"><strong>Credential Storage</strong>: Saves temporary credentials to AWS CLI profiles</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-801d-965c-d966d6cf2700" class="bulleted-list"><li style="list-style-type:disc"><strong>Access Logging</strong>: Tracks all role assumption attempts</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8024-845f-d18ab1405704" class="bulleted-list"><li style="list-style-type:disc"><strong>Error Handling</strong>: Provides specific error messages for common issues</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-803e-af1d-e45f9f4ee649" class="bulleted-list"><li style="list-style-type:disc"><strong>Config Validation</strong>: Validates account configuration before use</li></ul></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-80c8-90b3-cf676ccb6d62" class="">Testing the Tool</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8018-bf05-f8eeb7a89823" class="">I tested the script with three commands:</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8057-bec1-e662d746f6ad" class=""><strong>1. List accounts:</strong></p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-80a3-a934-d9d707972786" class="code code-wrap"><code class="language-Bash" style="white-space:pre-wrap;word-break:break-all">python3 account_manager.py list
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-801e-9365-e003c758d5a8" class="">This created the <code>accounts.json</code> config file and displayed both accounts.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8032-a013-c8c81fb37952" class=""><strong>2. Check current identity:</strong></p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-80fd-97c0-edaa157a179f" class="code code-wrap"><code class="language-Bash" style="white-space:pre-wrap;word-break:break-all">python3 account_manager.py whoami
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8012-90bd-daaea88a1bbc" class="">Showed I was authenticated as cli-user in my main account (123456789012).</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80f1-8c1f-e960c4d09e37" class=""><strong>3. Assume role in dev account:</strong></p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-80ab-bb78-ff2d67f4b828" class="code code-wrap"><code class="language-Bash" style="white-space:pre-wrap;word-break:break-all">python3 account_manager.py assume dev
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8016-9b66-f97d8b22d4e2" class="">This successfully:</p></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-807c-9978-cf313748524b" class="bulleted-list"><li style="list-style-type:disc">Assumed the CrossAccountAdminRole in my dev account</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8091-bddc-f3597e6603ef" class="bulleted-list"><li style="list-style-type:disc">Retrieved temporary credentials</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8001-8b77-da6b6042270a" class="bulleted-list"><li style="list-style-type:disc">Saved them to a profile called <code>assumed-dev</code></li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-80d3-9092-f4080b807dcb" class="bulleted-list"><li style="list-style-type:disc">Logged the access attempt</li></ul></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80cb-a4c3-ec5adfdf4d6d" class=""><strong>4. Verify the assumed role:</strong></p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-804b-8500-d83bbae49ac0" class="code code-wrap"><code class="language-Bash" style="white-space:pre-wrap;word-break:break-all">export AWS_PROFILE=assumed-dev
+aws sts get-caller-identity
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80ee-9baf-fcf58d620462" class="">The output confirmed I was now operating as the assumed role in account 093218045525:</p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-8093-8aee-e20a827048e1" class="code code-wrap"><code class="language-JSON" style="white-space:pre-wrap;word-break:break-all">{
+    &quot;UserId&quot;: &quot;AIDAEXAMPLEUSERID123:session-20251006-170405&quot;,
+    &quot;Account&quot;: &quot;987654321098&quot;,
+    &quot;Arn&quot;: &quot;arn:aws:sts::987654321098:assumed-role/CrossAccountAdminRole/session-20251006-170405&quot;
+}
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8033-85b7-ed44bf2dc3fe" class=""><strong>5. Switch back to main account:</strong></p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="28551790-a77c-8092-b61d-c27d80d828c8" class="code code-wrap"><code class="language-Bash" style="white-space:pre-wrap;word-break:break-all">unset AWS_PROFILE
+aws sts get-caller-identity
+</code></pre></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80ec-8cce-f18e52f86327" class="">And I was back to my main account as cli-user.</p></div><div style="display:contents" dir="auto"><h2 id="28551790-a77c-80b6-9ea6-d68f62af90d3" class="">Key Lessons Learned</h2></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8000-848f-dfa205523eca" class="">Building this tool taught me several important lessons about AWS, Python, and cloud security:</p></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-8037-bf5c-fe212594b15d" class="">IAM and Security Concepts</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-802b-8071-e18de2ce91e5" class=""><strong>IAM roles are more secure than sharing credentials.</strong> Instead of copying access keys between accounts, roles use temporary credentials that expire automatically. This reduces the risk of credential compromise.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8017-8588-c5c4734f148e" class=""><strong>Trust relationships are directional.</strong> Just because Account A trusts Account B doesn&#x27;t mean Account B trusts Account A. Each trust relationship must be explicitly configured in the role&#x27;s trust policy.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80b6-8071-f0cf3896e70c" class=""><strong>Least privilege takes planning.</strong> I started with AdministratorAccess to get things working, but in production, I&#x27;d need to define specific permissions for each role based on actual requirements.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8019-85bb-e37c930ca206" class=""><strong>STS (Security Token Service) is the backbone of temporary credentials.</strong> The <code>AssumeRole</code> API is what makes cross-account access possible without sharing long-term credentials.</p></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-80e0-8d5a-c1012a05ca7c" class="">AWS Organizations</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8080-a08a-d2f405a1111d" class=""><strong>Multi-account architecture is the standard.</strong> Even small companies use multiple AWS accounts to separate environments (dev, staging, production) and isolate workloads.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8043-a277-cc5a2ce4d4f3" class=""><strong>Organizations simplifies account management.</strong> Using AWS Organizations meant I could manage both accounts from one place and avoid complex billing setups.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80ad-84ae-fe5c29e78ad1" class=""><strong>The email trick is useful.</strong> Using <code>email+identifier@domain.com</code> let me create multiple accounts with one email address.</p></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-80a6-8dec-d40c8fdae5f1" class="">Python and Development</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8056-9ae1-c2e99cc26490" class=""><strong>Error handling matters.</strong> My first version of the script had generic exception handling. Adding specific exception types (ClientError, NoCredentialsError) made debugging much easier and provided better user feedback.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8086-8d6d-c58b1efb7986" class=""><strong>Config validation prevents headaches.</strong> Checking that the config file has the correct structure before using it saved me from cryptic errors later.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8009-86bb-d62dbd0063e4" class=""><strong>Logging is essential for security tools.</strong> The access log provides an audit trail of who assumed what role and when, which is critical for security monitoring.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8053-917c-f000983e3d9e" class=""><strong>File operations need care.</strong> Managing the AWS credentials file required careful logic to avoid corrupting it or leaving excessive blank lines.</p></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-8027-a059-e29d30628801" class="">Development Process</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80e9-abeb-d44ac1d1dc0e" class=""><strong>Test manually first.</strong> Running <code>aws sts assume-role</code> from the command line before writing code helped me understand exactly what the API returns and what errors to expect.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8018-b35e-d3d830d27d57" class=""><strong>Start simple, then improve.</strong> I built a basic version that worked, then added error handling, validation, and logging. Trying to build everything at once would have been overwhelming.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-800e-8157-d6e4e1fbdece" class=""><strong>Documentation as you go.</strong> Writing this blog post while building the tool helped me understand what I was doing and created portfolio content at the same time.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8095-b3d8-ca97a36b2ae5" class=""><strong>Real errors are learning opportunities.</strong> The account ID typo and the boto3 installation issue were frustrating in the moment, but they taught me to double-check inputs and understand Python environments.</p></div><div style="display:contents" dir="auto"><h3 id="28551790-a77c-8056-87d1-f34ee6bc43e2" class="">What I&#x27;d Do Differently</h3></div><div style="display:contents" dir="auto"><p id="28551790-a77c-809b-8e60-e66916a08793" class="">If I were building this for production use, I&#x27;d add:</p></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-80b7-8bd4-d4fa51c73a12" class="bulleted-list"><li style="list-style-type:disc"><strong>Role session duration configuration</strong> - Allow users to specify how long credentials should last</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-80b4-83ac-eed3ad396570" class="bulleted-list"><li style="list-style-type:disc"><strong>MFA support</strong> - Require multi-factor authentication for sensitive role assumptions</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8071-85d4-d21cc87855e8" class="bulleted-list"><li style="list-style-type:disc"><strong>Credential caching</strong> - Store valid credentials temporarily to avoid unnecessary API calls</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-808f-8f85-e616974d7280" class="bulleted-list"><li style="list-style-type:disc"><strong>Better profile management</strong> - Add commands to list active profiles and clean up expired ones</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-806c-aefb-e7999166c9eb" class="bulleted-list"><li style="list-style-type:disc"><strong>More granular permissions</strong> - Replace AdministratorAccess with specific policies for each use case</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8099-a7b6-c6e33998f9e5" class="bulleted-list"><li style="list-style-type:disc"><strong>Automated testing</strong> - Write unit tests for the core functionality</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-80ea-a3d2-ea4f7d5435a2" class="bulleted-list"><li style="list-style-type:disc"><strong>Better configuration management</strong> - Support environment variables or a config directory</li></ul></div><div style="display:contents" dir="auto"><h2 id="28551790-a77c-807c-a5d8-d2282c8c0c1d" class="">Conclusion</h2></div><div style="display:contents" dir="auto"><p id="28551790-a77c-80a8-9559-cff84ed8aa89" class="">This project gave me hands-on experience with IAM concepts that are fundamental to working with AWS. I now understand:</p></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8024-86b8-d43f1a9109e1" class="bulleted-list"><li style="list-style-type:disc">How cross-account access works at a technical level</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-80e7-b588-c98923ed89fb" class="bulleted-list"><li style="list-style-type:disc">How to use boto3 to interact with AWS programmatically</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-8025-b7b3-c91773509b18" class="bulleted-list"><li style="list-style-type:disc">How to structure a Python CLI tool with proper error handling</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-801a-9f5f-cdc5d7a5c37f" class="bulleted-list"><li style="list-style-type:disc">How temporary credentials and role assumption work</li></ul></div><div style="display:contents" dir="auto"><ul id="28551790-a77c-80ea-a9f3-c20efc5b4b3f" class="bulleted-list"><li style="list-style-type:disc">Why multi-account architecture is important for security</li></ul></div><div style="display:contents" dir="auto"><p id="28551790-a77c-806b-8fec-ed82b179be30" class="">The tool I built is functional and addresses a real need: easily switching between AWS accounts without manually copying credentials or using the web console. It&#x27;s something I can actually use in my own work and showcase in my portfolio.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-8062-bfda-fbec2ed0bd38" class="">More importantly, I learned by doing. Reading about IAM roles is one thing, but actually setting up trust relationships, debugging permission errors, and handling temporary credentials gave me practical knowledge that will be valuable in any cloud engineering role.</p></div><div style="display:contents" dir="auto"><p id="28551790-a77c-802d-90ac-ec6cd11e78be" class="">The complete code is available on GitHub: <a href="https://github.com/Joieux/aws-account-manager.git">https://github.com/Joieux/aws-account-manager.git</a></p></div></div></article></body></html>
