@@ -260,4 +260,4 @@ Built as a learning project to understand AWS IAM, cross-account access, and bot
 
 ## Blog Post
 
-For a detailed walkthrough of building this tool, including challenges and lessons learned, check out the [blog post]([link-to-your-blog](https://www.notion.so/Building-an-AWS-Multi-Account-Access-Manager-From-Setup-to-Deployment-28551790a77c80339009e01361a60fcf?source=copy_link)).
+For a detailed walkthrough of building this tool, including challenges and lessons learned, check out the [blog post][https://www.notion.so/Building-an-AWS-Multi-Account-Access-Manager-From-Setup-to-Deployment-28551790a77c80339009e01361a60fcf?source=copy_link]
