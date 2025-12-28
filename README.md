@@ -260,4 +260,4 @@ Built as a learning project to understand AWS IAM, cross-account access, and bot
 
 ## Blog Post
 
-[Read the full walkthrough (PDF)](./Building_an_AWS_Multi-Account_Access_Manager_From_Setup_to_Deployment.pdf)
+[Read the full blog post (PDF)](./Building_an_AWS_Multi-Account_Access_Manager_From_Setup_to_Deployment.pdf)
